@@ -1,0 +1,12 @@
+Flask
+SQLAlchemy
+passlib
+markdown
+bleach
+cryptography
+pycryptodome
+requests
+pyotp
+qrcode
+Flask-WTF
+Pillow

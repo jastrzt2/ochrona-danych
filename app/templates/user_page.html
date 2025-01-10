@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Profile of User - {{ username }}</title>
+</head>
+<body>
+    <h1>Username: {{ username }}</h1>
+    <h2>Notes:</h2>
+    <ul>
+        {% for note in notes %}
+            <li>
+                <a href="{{ url_for('show_note', note_id=note[0]) }}">Note #{{ note[0] }}</a>: {{ note[1] }}
+            </li>
+        {% endfor %}
+    </ul>
+    <p><a href="{{ url_for('index') }}">Go back to homepage</a></p>
+    <h3>Public key: {{ public_key }}</h2>
+</body>
+</html>

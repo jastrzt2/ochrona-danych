@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Note Details - {{ title }}</title>
+</head>
+<body>
+    <h1>{{ title }}</h1>
+    <div>
+        <p>{{ content|safe }}</p>
+        <p><small>Sign in Base64 (sign of SHA256 hash of content): {{ sign }}</small></p>
+        {% if signature_valid %}
+            <p style="color: green;"><strong>Signature is valid.</strong></p>
+        {% else %}
+            <p style="color: red;"><strong>Signature is invalid!</strong></p>
+        {% endif %}
+    </div>
+    {% if current_user_id == note_owner_id %}
+        <p><a href="{{ url_for('edit_note', note_id=note_id) }}">Edit note</a></p>
+    {% endif %}
+    <p><a href="{{ url_for('index') }}">Return</a></p>
+</body>
+</html>

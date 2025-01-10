@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Homepage</title>
+    <style>
+        /* Dodaj prosty styl dla tabeli */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+
+        .fail {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Welcome to Safe Twitter Clone Application</h1>
+    
+    {% if current_user %}
+        <p>Logged in as: {{ current_user[1] }}</p>
+        <p><a href="{{ url_for('logout') }}">Log out</a></p>
+        <a href="{{ url_for('change_password') }}">Change password</a>
+
+        <h2><a href="{{ url_for('add_note') }}">Add new note</a></h2>
+
+        <p><a href="/user/{{ current_user[0] }}">My profile</a></p>
+
+        <h2>Last logging attemps:</h2>
+        {% if login_attempts %}
+            <table>
+                <tr>
+                    <th>ID</th>
+                    <th>IP</th>
+                    <th>Time</th>
+                    <th>Country</th>
+                    <th>Country Code</th>
+                    <th>ISP</th>
+                    <th>City</th>
+                    <th>Status</th>
+                </tr>
+                {% for attempt in login_attempts %}
+                <tr>
+                    <td>{{ attempt[0] }}</td>
+                    <td>{{ attempt[1] }}</td>
+                    <td>{{ attempt[2] }}</td>
+                    <td>{{ attempt[3] }}</td>
+                    <td>{{ attempt[4] }}</td>
+                    <td>{{ attempt[5] }}</td>
+                    <td>{{ attempt[6] }}</td>
+                    <td>
+                        {% if attempt[7] == 1 %}
+                            <span class="success">Successed</span>
+                        {% else %}
+                            <span class="fail">Failed</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p>No data about last logging attempts.</p>
+        {% endif %}
+
+        <h2>Unique logging attemps:</h2>
+        {% if unique_ips %}
+            <table>
+                <tr>
+                    <th>IP</th>
+                    <th>Count of attempts</th>
+                </tr>
+                {% for ip, count in unique_ips %}
+                <tr>
+                    <td>{{ ip }}</td>
+                    <td>{{ count }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p>No unique IP.</p>
+        {% endif %}
+    {% else %}
+        <p><a href="{{ url_for('login') }}">Login in</a> lub <a href="{{ url_for('register') }}">Register</a></p>
+    {% endif %}
+
+    <h2>Last notes:</h2>
+    <ul>
+        {% for note in notes %}
+            <li><strong><a href="/notes/{{ note[0] }}">{{ note[2] }}</a></strong>: {{ note[1] }}</li>
+        {% endfor %}
+    </ul>
+    <p><a href="{{ url_for('all_notes') }}">See all notes</a></p>
+
+    <h2>Last registered users:</h2>
+    <ul>
+        {% for user in users %}
+            <li><a href="/user/{{ user[0] }}">{{ user[1] }}</a></li>
+        {% endfor %}
+    </ul>
+    <p><a href="{{ url_for('all_users') }}">See all users</a></p>
+</body>
+
+</html>

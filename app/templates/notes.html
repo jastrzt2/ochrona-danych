@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Your notes</title>
+</head>
+<body>
+    <h1>Your notes</h1>
+    {% if notes %}
+        <ul>
+        {% for note in notes %}
+            <li>
+                <p>{{ note.content or '' }}</p>
+                <p><small>Sign: {{ note.sign }}</small></p>
+                <a href="{{ url_for('edit_note', note_id=note.id) }}">[Edit]</a> 
+                <a href="{{ url_for('delete_note_endpoint', note_id=note.id) }}">[Delete]</a>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No notes.</p>
+    {% endif %}
+
+    
+</body>
+</html>

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Registration succesfull</title>
+</head>
+<body>
+    <h1>Registration succesfull</h1>
+    <p>Your TOTP secrect:</p>
+    <p style="font-weight: bold; font-size: 20px;">{{ totp_secret }}</p>
+    <p>:</p>
+    <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code ">
+    <p>Keep this secrect in safe place!</p>
+    <p><a href="{{ url_for('index') }}">Go to homepage</a></p>
+</body>
+</html>
