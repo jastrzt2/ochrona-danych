@@ -156,6 +156,7 @@ def login():
             sleep_to_meet_min_time(min_time, time.time() - start_time)
             record_login_attempt(None, ip_address, country_name, country_code, isp, city, login_time, False)
             return render_template('login.html', error="Too many login attempts")
+        
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
         totp_token = request.form.get('totp', '').strip()
@@ -362,11 +363,10 @@ def forgot_password():
         ip = request.remote_addr
         current_time = datetime.datetime.now()
 
-        record_send_reset_email_attempt(ip, current_time)
-        
         if count_send_reset_email_attempts(ip):
             sleep_to_meet_min_time(min_time, time.time() - start_time)
             return render_template('forgot_password.html', error="Too many password reset attempts. Please try again later.")
+        record_send_reset_email_attempt(ip, current_time)
         
         email = request.form.get('email', '').strip()
         
@@ -404,13 +404,13 @@ def reset_password(token):
     ip = request.remote_addr
     current_time = datetime.datetime.now()
 
-    record_password_reset_attempt(ip, current_time)
-
     hashed_token = hash_token(token)
     user_id = get_user_id_by_reset_token(hashed_token)
     
     if count_password_reset_attempts(ip):
         return render_template('reset_password.html', error="Too many password reset attempts. Please try again later.")
+    
+    record_password_reset_attempt(ip, current_time)
     
     if not user_id:
         return render_template('reset_password.html', error="Invalid token")
