@@ -85,14 +85,19 @@ def register():
         repeated_password = request.form.get('repeat_password', '')
         email = request.form.get('email', '').strip()
         ip_address = request.remote_addr
+        user_agent = request.headers.get('User-Agent', 'Unknown')
         register_time = datetime.datetime.now()
         request_info = get_ip_info(ip_address)
+        country_name = request_info.get('country_name', 'Unknown')
+        country_code = request_info.get('country_code2', 'Unknown')
+        isp = request_info.get('isp', 'Unknown')
+        city = request_info.get('city', 'Unknown')
         
         if count_registration_attempts(ip_address):
             sleep_to_meet_min_time(min_time, time.time() - start_time)
             return render_template('register.html', error="Too many registration attempts. Please try again later.")
         
-        record_registration_attempt(None, ip_address, country_name, country_code, isp, city, register_time, False)
+        record_registration_attempt(ip_address, register_time)
         
         if not username or not password or not repeated_password or not email:
             sleep_to_meet_min_time(min_time, time.time() - start_time)
@@ -110,12 +115,6 @@ def register():
             sleep_to_meet_min_time(min_time, time.time() - start_time)
             return render_template('register.html', error="User with this email already exists")
 
-
-        country_name = request_info.get('country_name', 'Unknown')
-        country_code = request_info.get('country_code2', 'Unknown')
-        isp = request_info.get('isp', 'Unknown')
-        city = request_info.get('city', 'Unknown')
-
         totp_secret = pyotp.random_base32()
         totp = pyotp.TOTP(totp_secret)
         provisioning_uri = totp.provisioning_uri(name=username, issuer_name="Projekt Ochrona danych")
@@ -125,7 +124,7 @@ def register():
         create_user(username, password, email, totp_secret)
         user_id = get_user_by_username(username)[0]
         session['user_id'] = user_id
-        record_login_attempt(user_id, ip_address, country_name, country_code, isp, city, register_time, True)
+        record_login_attempt(user_id, ip_address, country_name, country_code, isp, city, register_time, user_agent, True)
 
         
         sleep_to_meet_min_time(min_time, time.time() - start_time)
@@ -138,6 +137,7 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     ip_address = request.remote_addr
+    user_agent = request.headers.get('User-Agent', 'Unknown')
     login_time = datetime.datetime.now()
     request_info = get_ip_info(ip_address)
     country_name = request_info.get('country_name', 'Unknown')
@@ -154,7 +154,7 @@ def login():
         
         if has_exceeded_login_attempts(ip_address):
             sleep_to_meet_min_time(min_time, time.time() - start_time)
-            record_login_attempt(None, ip_address, country_name, country_code, isp, city, login_time, False)
+            record_login_attempt(None, ip_address, country_name, country_code, isp, city, login_time, user_agent, False)
             return render_template('login.html', error="Too many login attempts")
         
         username = request.form.get('username', '').strip()
@@ -163,35 +163,35 @@ def login():
 
         if not username or not password or not totp_token:
             sleep_to_meet_min_time(min_time, time.time() - start_time)
-            record_login_attempt(None, ip_address, country_name, country_code, isp, city, login_time, False)
+            record_login_attempt(None, ip_address, country_name, country_code, isp, city, login_time, user_agent, False)
             return render_template('login.html', error="All fields are required")
         
         error = validate_login_inputs(username, password, totp_token)
         if error:
             sleep_to_meet_min_time(min_time, time.time() - start_time)
-            record_login_attempt(None, ip_address, country_name, country_code, isp, city, login_time, False)
+            record_login_attempt(None, ip_address, country_name, country_code, isp, city, login_time, user_agent, False)
             return render_template('login.html', error=error)
         
         user = get_user_by_username(username)
         if user is None:
             sleep_to_meet_min_time(min_time, time.time() - start_time)
-            record_login_attempt(None, ip_address, country_name, country_code, isp, city, login_time, False)
+            record_login_attempt(None, ip_address, country_name, country_code, isp, city, login_time, user_agent, False)
             return render_template('login.html', error="Invalid credentials")
 
         if not verify_password(password, user[4]):
-            record_login_attempt(user[0], ip_address, country_name, country_code, isp, city, login_time, False)
+            record_login_attempt(user[0], ip_address, country_name, country_code, isp, city, login_time, user_agent, False)
             sleep_to_meet_min_time(min_time, time.time() - start_time)
             return render_template('login.html', error="Invalid credentials")
         
         totp_secret = get_user_totp_secret(user[0], password)
         totp = pyotp.TOTP(totp_secret)
         if not totp.verify(totp_token): 
-            record_login_attempt(user[0], ip_address, country_name, country_code, isp, city, login_time, False)
+            record_login_attempt(user[0], ip_address, country_name, country_code, isp, city, login_time, user_agent, False)
             sleep_to_meet_min_time(min_time, time.time() - start_time)
             return render_template('login.html', error="Invalid credentials")
 
         session['user_id'] = user[0]
-        record_login_attempt(user[0], ip_address, country_name, country_code, isp, city, login_time, True)
+        record_login_attempt(user[0], ip_address, country_name, country_code, isp, city, login_time, user_agent, True)
         
         sleep_to_meet_min_time(min_time, time.time() - start_time)
         return redirect(url_for('index'))
@@ -227,7 +227,7 @@ def change_password():
             sleep_to_meet_min_time(min_time, time.time() - start_time)
             return render_template('change_password.html', error="Wrong current password")
         
-        totp_secret = get_user_totp_secret(session['user_id']), current_password
+        totp_secret = get_user_totp_secret(session['user_id'], current_password)
         totp = pyotp.TOTP(totp_secret)
         if not totp.verify(totp_token):
             sleep_to_meet_min_time(min_time, time.time() - start_time)
@@ -238,7 +238,6 @@ def change_password():
         return redirect(url_for('index'))
 
     return render_template('change_password.html')
-
 
 @app.route('/add_note', methods=['GET','POST'])
 def add_note():

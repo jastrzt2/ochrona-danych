@@ -43,6 +43,7 @@ def init_db():
                 country_code TEXT,
                 isp TEXT,
                 city TEXT,
+                user_agent TEXT NULL,
                 success INTEGER NOT NULL NOT NULL,
                 FOREIGN KEY(user_id) REFERENCES users(id)
             )
@@ -312,11 +313,11 @@ def delete_reset_token(token):
     conn.commit()
     conn.close()
     
-def record_login_attempt(user_id, ip_address, country, country_code, isp, city, login_time, success):
+def record_login_attempt(user_id, ip_address, country, country_code, isp, city, login_time, user_agent, success):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute('INSERT INTO login_attempts (user_id, ip_address, country, country_code, isp, city, login_time, success) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
-              (user_id, ip_address, country, country_code, isp, city, login_time, success ))
+    c.execute('INSERT INTO login_attempts (user_id, ip_address, country, country_code, isp, city, login_time, user_agent, success) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+              (user_id, ip_address, country, country_code, isp, city, login_time, user_agent, success ))
     conn.commit()
     conn.close()
     
@@ -338,7 +339,7 @@ def get_login_attempts(user_id, limit=100):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''
-        SELECT id, ip_address, login_time, country, country_code, isp, city, success
+        SELECT id, ip_address, login_time, country, country_code, isp, city, user_agent, success
         FROM login_attempts
         WHERE user_id = ?
         ORDER BY login_time DESC

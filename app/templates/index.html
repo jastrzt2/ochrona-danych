@@ -31,6 +31,7 @@
                     <th>Country Code</th>
                     <th>ISP</th>
                     <th>City</th>
+                    <th>User Agent</th>
                     <th>Status</th>
                 </tr>
                 {% for attempt in login_attempts %}
@@ -42,8 +43,9 @@
                     <td>{{ attempt[4] }}</td>
                     <td>{{ attempt[5] }}</td>
                     <td>{{ attempt[6] }}</td>
+                    <td>{{ attempt[7] }}</td>
                     <td>
-                        {% if attempt[7] == 1 %}
+                        {% if attempt[8] == 1 %}
                             <span class="success">Successed</span>
                         {% else %}
                             <span class="fail">Failed</span>
