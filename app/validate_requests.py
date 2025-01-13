@@ -105,8 +105,8 @@ def validate_note_create_or_edit(title, content, password):
     
     if len(content) == 0:
         errors.append("Content cannot be empty.")
-    if len(content) > 1000:
-        errors.append("Content cannot exceed 1000 characters.")
+    if len(content) > 10000:
+        errors.append("Content cannot exceed 10000 characters.")
 
     return "\n".join(errors) if errors else None
 

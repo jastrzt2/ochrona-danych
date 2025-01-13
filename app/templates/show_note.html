@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Note Details - {{ title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="{{ url_for('static', filename='js/password_entropy.js') }}"></script>
 </head>
 <body>
     <h1>{{ title }}</h1>
@@ -10,9 +12,9 @@
         <p>{{ content|safe }}</p>
         <p><small>Sign in Base64 (sign of SHA256 hash of content): {{ sign }}</small></p>
         {% if signature_valid %}
-            <p style="color: green;"><strong>Signature is valid.</strong></p>
+            <p class="success"><strong>Signature is valid.</strong></p>
         {% else %}
-            <p style="color: red;"><strong>Signature is invalid!</strong></p>
+            <p class="fail"><strong>Signature is invalid!</strong></p>
         {% endif %}
     </div>
     {% if current_user_id == note_owner_id %}

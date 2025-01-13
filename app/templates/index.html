@@ -4,39 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <title>Homepage</title>
-    <style>
-        /* Dodaj prosty styl dla tabeli */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #f2f2f2;
-        }
-
-        .success {
-            color: green;
-            font-weight: bold;
-        }
-
-        .fail {
-            color: red;
-            font-weight: bold;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="{{ url_for('static', filename='js/password_entropy.js') }}"></script>
 </head>
 
 <body>
     <h1>Welcome to Safe Twitter Clone Application</h1>
-    
+
     {% if current_user %}
         <p>Logged in as: {{ current_user[1] }}</p>
         <p><a href="{{ url_for('logout') }}">Log out</a></p>
@@ -46,7 +20,7 @@
 
         <p><a href="/user/{{ current_user[0] }}">My profile</a></p>
 
-        <h2>Last logging attemps:</h2>
+        <h2>Last logging attempts:</h2>
         {% if login_attempts %}
             <table>
                 <tr>
@@ -82,7 +56,7 @@
             <p>No data about last logging attempts.</p>
         {% endif %}
 
-        <h2>Unique logging attemps:</h2>
+        <h2>Unique logging attempts:</h2>
         {% if unique_ips %}
             <table>
                 <tr>
@@ -100,7 +74,7 @@
             <p>No unique IP.</p>
         {% endif %}
     {% else %}
-        <p><a href="{{ url_for('login') }}">Login in</a> lub <a href="{{ url_for('register') }}">Register</a></p>
+        <p><a href="{{ url_for('login') }}">Login</a> or <a href="{{ url_for('register') }}">Register</a></p>
     {% endif %}
 
     <h2>Last notes:</h2>

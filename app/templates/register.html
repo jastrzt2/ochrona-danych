@@ -3,21 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <title>Register</title>
-    <script src="{{ url_for('static', filename='password_entropy.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="{{ url_for('static', filename='js/password_entropy.js') }}"></script>
 </head>
 <body>
     <h1>Create an Account</h1>
     {% if error %}
-        <p style="color:red;">{{ error }}</p>
+        <p class="error">{{ error }}</p>
     {% endif %}
     <form method="POST" action="{{ url_for('register') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <p>Username: <input type="text" name="username" required></p>
         <p>Email: <input type="email" name="email" required></p>
         <p>Password: <input type="password" id="password" name="password" required></p>
-        <p id="passwordFeedback" style="font-weight: bold;"></p>
+        <p id="passwordFeedback" class="bold"></p>
         <p>Confirm password: <input type="password" name="repeat_password" required></p>
-        <div style="display:none;">
+        <div class="hidden">
             <input type="text" name="honeypot" autocomplete="off">
         </div>
         <p><input type="submit" id="submitButton" value="Register" disabled></p>

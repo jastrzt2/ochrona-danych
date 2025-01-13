@@ -70,6 +70,13 @@ def init_db():
                 attempt_time TEXT NOT NULL
             )
         ''')
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS registration_attempts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ip TEXT NOT NULL,
+                attempt_time TEXT NOT NULL
+            )
+        ''')
         conn.commit()
         conn.close()
 
@@ -388,6 +395,25 @@ def count_send_reset_email_attempts(ip, time_limit=30, attempt_limit = 5):
     c = conn.cursor()
     c.execute('''
         SELECT COUNT(*) FROM send_reset_email_attempts
+        WHERE ip = ? AND attempt_time >= ?
+    ''', (ip, time_limit_ago))
+    count = c.fetchone()[0]
+    conn.close()
+    return count > attempt_limit
+
+def record_registration_attempt(ip, attempt_time):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('INSERT INTO registration_attempts (ip, attempt_time) VALUES (?, ?)', (ip, attempt_time))
+    conn.commit()
+    conn.close()
+
+def count_registration_attempts(ip, time_limit=30, attempt_limit = 5):
+    time_limit_ago = (datetime.datetime.now() - datetime.timedelta(minutes=time_limit))
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('''
+        SELECT COUNT(*) FROM registration_attempts
         WHERE ip = ? AND attempt_time >= ?
     ''', (ip, time_limit_ago))
     count = c.fetchone()[0]

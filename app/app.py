@@ -7,7 +7,7 @@ from flask import Flask, abort, request, session, redirect, url_for, render_temp
 import markdown
 import pyotp
 from bleacher import bleach_html
-from db import count_password_reset_attempts, count_send_reset_email_attempts, create_note, delete_note, delete_reset_token, get_latest_notes, get_latest_users, get_login_attempts, get_note_by_id, get_notes_by_user, get_unique_ips, get_user_basic_data_by_id, get_user_id_by_email, get_user_id_by_reset_token, get_user_note_by_id, get_user_totp_secret, has_exceeded_login_attempts, init_db, get_user_by_username, create_user, get_user_by_id, is_email_in_database, record_login_attempt, record_password_reset_attempt, record_send_reset_email_attempt, reset_password_update_user_data, save_reset_token, update_note, update_user_password
+from db import count_password_reset_attempts, count_registration_attempts, count_send_reset_email_attempts, create_note, delete_note, delete_reset_token, get_latest_notes, get_latest_users, get_login_attempts, get_note_by_id, get_notes_by_user, get_unique_ips, get_user_basic_data_by_id, get_user_id_by_email, get_user_id_by_reset_token, get_user_note_by_id, get_user_totp_secret, has_exceeded_login_attempts, init_db, get_user_by_username, create_user, get_user_by_id, is_email_in_database, record_login_attempt, record_password_reset_attempt, record_registration_attempt, record_send_reset_email_attempt, reset_password_update_user_data, save_reset_token, update_note, update_user_password
 from authorization import hash_token, verify_password
 from qrcode_generator import generate_qr_code
 from request_informations import get_ip_info
@@ -24,16 +24,16 @@ app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 csrf = CSRFProtect(app)
-
-init_db()
         
 HONEYPOT_ROUTES = ['register', 'login', 'add_note', 'edit_note', 'change_password', 'forgot_password', 'reset_password']
 
 CSP_POLICY = {
-    'default-src': ["'self'"],
-    'img-src': ["'self'"],
-    'style-src': ["'self'"],
-    'script-src': ["'self'"],
+    "default-src 'self'; "
+    "script-src 'self'; "
+    "style-src 'self'; "
+    "img-src 'self' data: https:; "
+    "frame-ancestors 'none'; "
+    "object-src 'none'; "
 }
 
 
@@ -81,9 +81,18 @@ def register():
         random_sleep_time = random.uniform(0, 1)
         min_time = min_time + random_sleep_time
         username = request.form.get('username', '').strip()
-        password = request.form.get('password', '').strip()
-        repeated_password = request.form.get('repeat_password', '').strip()
+        password = request.form.get('password', '')
+        repeated_password = request.form.get('repeat_password', '')
         email = request.form.get('email', '').strip()
+        ip_address = request.remote_addr
+        register_time = datetime.datetime.now()
+        request_info = get_ip_info(ip_address)
+        
+        if count_registration_attempts(ip_address):
+            sleep_to_meet_min_time(min_time, time.time() - start_time)
+            return render_template('register.html', error="Too many registration attempts. Please try again later.")
+        
+        record_registration_attempt(None, ip_address, country_name, country_code, isp, city, register_time, False)
         
         if not username or not password or not repeated_password or not email:
             sleep_to_meet_min_time(min_time, time.time() - start_time)
@@ -101,9 +110,6 @@ def register():
             sleep_to_meet_min_time(min_time, time.time() - start_time)
             return render_template('register.html', error="User with this email already exists")
 
-        ip_address = request.remote_addr
-        login_time = datetime.datetime.now()
-        request_info = get_ip_info(ip_address)
 
         country_name = request_info.get('country_name', 'Unknown')
         country_code = request_info.get('country_code2', 'Unknown')
@@ -119,7 +125,7 @@ def register():
         create_user(username, password, email, totp_secret)
         user_id = get_user_by_username(username)[0]
         session['user_id'] = user_id
-        record_login_attempt(user_id, ip_address, country_name, country_code, isp, city, login_time, True)
+        record_login_attempt(user_id, ip_address, country_name, country_code, isp, city, register_time, True)
 
         
         sleep_to_meet_min_time(min_time, time.time() - start_time)
@@ -151,7 +157,7 @@ def login():
             record_login_attempt(None, ip_address, country_name, country_code, isp, city, login_time, False)
             return render_template('login.html', error="Too many login attempts")
         username = request.form.get('username', '').strip()
-        password = request.form.get('password', '').strip()
+        password = request.form.get('password', '')
         totp_token = request.form.get('totp', '').strip()
 
         if not username or not password or not totp_token:
@@ -246,7 +252,7 @@ def add_note():
         min_time = min_time + random_sleep_time
         title = request.form.get('title', '').strip()
         content = request.form.get('content', '').strip()
-        password = request.form.get('password', '').strip()
+        password = request.form.get('password', '')
         
         error = validate_note_create_or_edit(title, content, password)
         if error:
@@ -255,8 +261,11 @@ def add_note():
         if not verify_password(password, get_user_by_id(user_id)[4]):
             sleep_to_meet_min_time(min_time, time.time() - start_time)
             return render_template('add_note.html', error="Wrong password")
+         
+        rendered = markdown.markdown(content, extensions=['extra', 'codehilite'])
+        bleached_html = bleach_html(rendered)
         
-        create_note( title, content, user_id, password)
+        create_note( title, bleached_html, user_id, password)
         
         sleep_to_meet_min_time(min_time, time.time() - start_time)
         return redirect(url_for('index'))
@@ -279,9 +288,7 @@ def show_note(note_id):
     signature_valid = verify_sign(note[2], note[3], public_key)
     sign_base64 = base64.b64encode(note[3]).decode('utf-8')
     
-    rendered = markdown.markdown(note[2], extensions=['extra', 'codehilite'])
-    
-    bleached_html = bleach_html(rendered)
+    bleached_html = bleach_html(note[2]) # na wszelki wypadek bleachuje tez po wyjeciu z bazy
     return render_template('show_note.html', signature_valid=signature_valid, 
                            note_id=note_id, title=note[1], 
                            content=bleached_html, sign=sign_base64, 
@@ -291,23 +298,31 @@ def show_note(note_id):
 
 @app.route('/notes/<int:note_id>/edit', methods=['GET', 'POST'])
 def edit_note(note_id):
+    
     user_id = session.get('user_id')
     if not user_id:
         return "Unauthorized access.", 401
 
     if request.method == 'POST':
+        min_time = 2.0 # tyle ile w add note
+        start_time = time.time()
+        random_sleep_time = random.uniform(0.0, 0.5)
+        min_time = min_time + random_sleep_time
         title = request.form.get('title', '').strip()
         content = request.form.get('content', '').strip()
         password = request.form.get('password', '')
         
         error = validate_note_create_or_edit(title, content, password)
         if error:
+            sleep_to_meet_min_time(min_time, time.time() - start_time)
             return render_template('edit_note.html', error=error, note_id=note_id)
         
         if not verify_password(password, get_user_by_id(user_id)[4]):
+            sleep_to_meet_min_time(min_time, time.time() - start_time)
             return render_template('edit_note.html', error="Wrong password")
         
-        bleached_html = bleach_html(content)
+        rendered = markdown.markdown(content, extensions=['extra', 'codehilite'])
+        bleached_html = bleach_html(rendered)
         update_note(note_id, title, bleached_html, user_id, password)
         return redirect(url_for('show_note', note_id=note_id))  
 
@@ -401,12 +416,16 @@ def reset_password(token):
         return render_template('reset_password.html', error="Invalid token")
 
     if request.method == 'POST':
-    
+        min_time = 2.0 # zakladam tyle ile w register
+        start_time = time.time()
+        random_sleep_time = random.uniform(0.0, 1.0)
+        min_time = min_time + random_sleep_time
         new_password = request.form.get('new_password')
         confirm_password = request.form.get('confirm_password')
 
         error = validate_reset_password(new_password, confirm_password)
         if error: 
+            sleep_to_meet_min_time(min_time, time.time() - start_time)
             return render_template('reset_password.html', error=error)
 
         delete_reset_token(token)
@@ -419,6 +438,8 @@ def reset_password(token):
         reset_password_update_user_data(user_id, new_password, totp_secret)
 
         qr_code_base64 = generate_qr_code(provisioning_uri)
+        
+        sleep_to_meet_min_time(min_time, time.time() - start_time)
         return render_template('reset_password_succes.html', totp_secret=totp_secret, qr_code_base64=qr_code_base64)
     return render_template('reset_password.html', token=token)
 

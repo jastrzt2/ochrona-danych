@@ -2,15 +2,21 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Registration succesfull</title>
+    <title>Registration Successful</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="{{ url_for('static', filename='js/password_entropy.js') }}"></script>
 </head>
 <body>
-    <h1>Registration succesfull</h1>
-    <p>Your TOTP secrect:</p>
-    <p style="font-weight: bold; font-size: 20px;">{{ totp_secret }}</p>
-    <p>:</p>
-    <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code ">
-    <p>Keep this secrect in safe place!</p>
+    <h1>Registration Successful</h1>
+    <p>Your TOTP secret:</p>
+    <p class="bold large-text">{{ totp_secret }}</p>
+    <p>Scan this QR code with your authenticator app:</p>
+    {% if qr_code_base64 %}
+        <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code">
+    {% else %}
+        <p class="error">QR code is not available.</p>
+    {% endif %}
+    <p>Keep this secret in a safe place!</p>
     <p><a href="{{ url_for('index') }}">Go to homepage</a></p>
 </body>
 </html>

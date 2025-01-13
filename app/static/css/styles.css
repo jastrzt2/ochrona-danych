@@ -1,0 +1,63 @@
+.error {
+    color: red;
+}
+
+.success {
+    color: green;
+}
+
+.large-text {
+    font-size: 20px;
+}
+
+.fail {
+    color: red;
+    font-weight: bold;
+}
+
+.hidden {
+    display: none;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+textarea {
+    width: 100%;
+    max-width: 600px;
+    margin-bottom: 15px;
+}
+
+button {
+    padding: 10px 15px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.totp-secret {
+    font-weight: bold;
+    font-size: 20px;
+}

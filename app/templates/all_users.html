@@ -4,20 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>All Users</title>
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="{{ url_for('static', filename='js/password_entropy.js') }}"></script>
 </head>
 <body>
     <h1>All Users</h1>
@@ -30,7 +18,7 @@
         <tbody>
             {% for user in users %}
             <tr>
-                <td><a href="/notes/{{ user[0] }}"></a>{{ user[1] }}</td>
+                <td><a href="/notes/{{ user[0] }}">{{ user[1] }}</a></td>
             </tr>
             {% endfor %}
         </tbody>
