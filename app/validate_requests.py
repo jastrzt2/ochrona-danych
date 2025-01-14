@@ -62,13 +62,9 @@ def validate_register_inputs(username, password, repeated_password, email):
         errors.append("Email contains invalid characters.")
     
     if password != repeated_password:
-        errors.append("Passwords do not match.")    
-    if len(password) > 128:
-        errors.append("Password cannot exceed 128 characters.")
+        errors.append("Passwords do not match.")
     if not is_password_valid(password):
         errors.append("Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character.")
-    if any(c not in password_allowed_characters for c in password):
-        errors.append("Password contains invalid characters.") 
     entropy_error = validate_password_entropy(password)
     if entropy_error:
         errors.append(entropy_error)
@@ -79,9 +75,6 @@ def validate_login_inputs(username, password, token):
 
     if len(username) > 100:
         errors.append("Username cannot exceed 100 characters.")
-    
-    if len(password) > 128:
-        errors.append("Password cannot exceed 128 characters.")
         
     if not token.isdigit():
         errors.append("TOTP token must contain only digits.")
@@ -92,9 +85,6 @@ def validate_login_inputs(username, password, token):
 
 def validate_note_create_or_edit(title, content, password):
     errors = []
-
-    if len(password) > 128:
-        errors.append("Password cannot exceed 128 characters.")
         
     if not title.isalnum():
         errors.append("Title can only contain letters and digits.")    
@@ -105,7 +95,7 @@ def validate_note_create_or_edit(title, content, password):
     
     if len(content) == 0:
         errors.append("Content cannot be empty.")
-    if len(content) > 10000:
+    if len(content) > 1000000:
         errors.append("Content cannot exceed 10000 characters.")
 
     return "\n".join(errors) if errors else None
@@ -119,12 +109,8 @@ def validate_change_password(current_password, new_password, confirm_password):
         errors.append("New password and confirmation are required.")
     if new_password != confirm_password:
         errors.append("New password and confirmation must match.")
-    if new_password and len(new_password) > 128:
-        errors.append("New password cannot exceed 128 characters.")
     if not is_password_valid(new_password):
         errors.append("Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character.")
-    if any(c not in password_allowed_characters for c in new_password):
-        errors.append("Password contains invalid characters.") 
     if new_password:
         entropy_error = validate_password_entropy(new_password)
         if entropy_error:
@@ -138,12 +124,8 @@ def validate_reset_password(new_password, confirm_password):
         errors.append("New password and confirmation are required.")
     if new_password != confirm_password:
         errors.append("New password and confirmation must match.")
-    if new_password and len(new_password) > 128:
-        errors.append("New password cannot exceed 128 characters.")
     if not is_password_valid(new_password):
         errors.append("Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character.")
-    if any(c not in password_allowed_characters for c in new_password):
-        errors.append("Password contains invalid characters.") 
     if new_password:
         entropy_error = validate_password_entropy(new_password)
         if entropy_error:

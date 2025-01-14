@@ -1,6 +1,5 @@
 import base64
 import datetime
-import os
 import random
 import time
 from flask import Flask, abort, request, session, redirect, url_for, render_template
@@ -18,7 +17,7 @@ from flask_wtf import CSRFProtect
 
 init_db()
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
+app.secret_key = b'~\x86N\xac\xed\x93E\xe0\xe5\xd1[!\xb3\xe4\x8f\xd0\xfe\x94ff\xe7\x8f\x94\xfb'
 app.permanent_session_lifetime = datetime.timedelta(minutes=30)
 app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
@@ -27,15 +26,13 @@ csrf = CSRFProtect(app)
         
 HONEYPOT_ROUTES = ['register', 'login', 'add_note', 'edit_note', 'change_password', 'forgot_password', 'reset_password']
 
-CSP_POLICY = {
+CSP_POLICY = (
     "default-src 'self'; "
     "script-src 'self'; "
     "style-src 'self'; "
     "img-src 'self' data: https:; "
     "frame-ancestors 'none'; "
-    "object-src 'none'; "
-}
-
+)
 
 @app.after_request
 def set_csp(response):
@@ -285,61 +282,16 @@ def show_note(note_id):
     owner = get_user_basic_data_by_id(note[4])
     public_key = owner[2]
     
-    signature_valid = verify_sign(note[2], note[3], public_key)
+    bleached_html = bleach_html(note[2]) # na wszelki wypadek bleachuje tez po wyjeciu z bazy
+    signature_valid = verify_sign(bleached_html, note[3], public_key)
     sign_base64 = base64.b64encode(note[3]).decode('utf-8')
     
-    bleached_html = bleach_html(note[2]) # na wszelki wypadek bleachuje tez po wyjeciu z bazy
+    content_base64 = base64.b64encode(bleached_html.encode('utf-8')).decode('utf-8')
     return render_template('show_note.html', signature_valid=signature_valid, 
                            note_id=note_id, title=note[1], 
-                           content=bleached_html, sign=sign_base64, 
-                           note_owner_id = note[4], 
-                           current_user_id = user_id)
-
-
-@app.route('/notes/<int:note_id>/edit', methods=['GET', 'POST'])
-def edit_note(note_id):
-    
-    user_id = session.get('user_id')
-    if not user_id:
-        return "Unauthorized access.", 401
-
-    if request.method == 'POST':
-        min_time = 2.0 # tyle ile w add note
-        start_time = time.time()
-        random_sleep_time = random.uniform(0.0, 0.5)
-        min_time = min_time + random_sleep_time
-        title = request.form.get('title', '').strip()
-        content = request.form.get('content', '').strip()
-        password = request.form.get('password', '')
-        
-        error = validate_note_create_or_edit(title, content, password)
-        if error:
-            sleep_to_meet_min_time(min_time, time.time() - start_time)
-            return render_template('edit_note.html', error=error, note_id=note_id)
-        
-        if not verify_password(password, get_user_by_id(user_id)[4]):
-            sleep_to_meet_min_time(min_time, time.time() - start_time)
-            return render_template('edit_note.html', error="Wrong password")
-        
-        rendered = markdown.markdown(content, extensions=['extra', 'codehilite'])
-        bleached_html = bleach_html(rendered)
-        update_note(note_id, title, bleached_html, user_id, password)
-        return redirect(url_for('show_note', note_id=note_id))  
-
-    note = get_user_note_by_id(note_id, user_id)
-    if not note:
-        return "Note doesn't exist or action is unauthorized", 404
-
-    return render_template('edit_note.html', note=note)
-
-@app.route('/notes/<int:note_id>/delete', methods=['POST'])
-def delete_note_endpoint(note_id):
-    user_id = session.get('user_id')
-    if not user_id:
-        return "Unauthorized access.", 401
-
-    delete_note(note_id, user_id)
-    return redirect(url_for('index'))
+                           content=bleached_html, sign=sign_base64,
+                           base64=content_base64,
+                           user = owner)
 
 @app.route('/user/<int:user_id>')
 def user_page(user_id):
