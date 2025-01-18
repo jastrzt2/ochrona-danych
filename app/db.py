@@ -6,7 +6,7 @@ from AES_encrypter_decrypted import rsa_aes_decrypt, rsa_aes_encrypt
 from authorization import hash_password
 from signer import create_sign
 
-DB_PATH = '/app/data/sqlite3.db'
+DB_PATH = './app/data/sqlite3.db'
 
 def init_db():
     if not os.path.exists(DB_PATH):
