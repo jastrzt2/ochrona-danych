@@ -6,7 +6,7 @@ services:
       - ./app:/app
       - ./app/data:/app/data
     user: "33:33"
-    command: bash -c "chown -R 33:33 /app/data && uwsgi --ini uwsgi.ini"
+    command: bash -c "sudo chown -R 33:33 /app/data && uwsgi --ini uwsgi.ini"
 
   nginx:
     image: nginx:latest
