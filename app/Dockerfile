@@ -4,6 +4,12 @@ WORKDIR /app
 
 COPY . /app
 
+USER root
+
 RUN pip install --no-cache-dir -r requirements.txt && pip install uwsgi
 
-CMD ["sh", "-c", "mkdir -p /app/data && chown -R 33:33 /app/data && uwsgi --ini uwsgi.ini"]
+RUN mkdir -p /app/data && chown -R 33:33 /app/data && chmod -R 755 /app/data
+
+USER 33
+
+CMD ["uwsgi", "--ini", "uwsgi.ini"]
