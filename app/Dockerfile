@@ -4,7 +4,6 @@ WORKDIR /app
 
 COPY . /app
 
-RUN pip install --no-cache-dir -r requirements.txt \
-    && pip install uwsgi 
+RUN pip install --no-cache-dir -r requirements.txt
 
 CMD ["uwsgi", "--ini", "uwsgi.ini"]
