@@ -8,6 +8,9 @@ from signer import create_sign
 
 DB_PATH = '/app/data/sqlite3.db'
 
+KEY_PEPPER = "b3a82ad64e8e26fcfe0c6a7d3b958b35fe525ab42074fbdb9d09b6c4d2865c7a" 
+TOKEN_PEPPER = "90783a4617e2ec1bf1844875f0198b561f7b05ad2ed078a3ba8ee7e2b063af9e"
+
 def init_db():
     if not os.path.exists(DB_PATH):
         conn = sqlite3.connect(DB_PATH)
@@ -122,10 +125,10 @@ def get_user_id_by_email(email):
 
 def update_user_password(user_id, new_password, current_password):
     private_key = get_user_private_key(user_id) 
-    decrypted_private_key = rsa_aes_decrypt(private_key, current_password)
-    encrypted_private_key = rsa_aes_encrypt(decrypted_private_key, new_password)
+    decrypted_private_key = rsa_aes_decrypt(private_key, current_password + KEY_PEPPER)
+    encrypted_private_key = rsa_aes_encrypt(decrypted_private_key, new_password + KEY_PEPPER)
     totp = get_user_totp_secret(user_id, current_password)
-    encrypted_totp = rsa_aes_encrypt(totp, new_password)
+    encrypted_totp = rsa_aes_encrypt(totp, new_password + TOKEN_PEPPER)
     new_password_hash = hash_password(new_password)
     
     conn = sqlite3.connect(DB_PATH)
@@ -137,12 +140,12 @@ def update_user_password(user_id, new_password, current_password):
 def reset_password_update_user_data(user_id, new_password, new_totp_secrect):
     private_key = RSA.generate(2048) 
     public_key = private_key.public_key()
-    encrypted_private_key = rsa_aes_encrypt(private_key.export_key(), new_password)
+    encrypted_private_key = rsa_aes_encrypt(private_key.export_key(), new_password + KEY_PEPPER)
     public_key_exported = public_key.export_key()
     
     resign_all_notes(user_id, private_key)
     
-    encrypted_totp = rsa_aes_encrypt(new_totp_secrect, new_password)
+    encrypted_totp = rsa_aes_encrypt(new_totp_secrect, new_password + TOKEN_PEPPER)
     new_password_hash = hash_password(new_password)
     
     conn = sqlite3.connect(DB_PATH)
@@ -174,7 +177,7 @@ def get_user_totp_secret(user_id, password):
     row = c.fetchone()
     conn.close()
     encrypted_totp_secret = row[0]
-    decrypted_totp_secret = rsa_aes_decrypt(encrypted_totp_secret, password)
+    decrypted_totp_secret = rsa_aes_decrypt(encrypted_totp_secret, password + TOKEN_PEPPER)
 
     return decrypted_totp_secret
 
@@ -182,10 +185,10 @@ def create_user(username, password, email, totp_secret):
     hashed_password = hash_password(password)
     private_key = RSA.generate(2048) 
     public_key = private_key.public_key()
-    encrypted_private_key = rsa_aes_encrypt(private_key.export_key(), password)
+    encrypted_private_key = rsa_aes_encrypt(private_key.export_key(), password + KEY_PEPPER)
     public_key_exported = public_key.export_key()
     
-    totp_secret_encrypted = rsa_aes_encrypt(totp_secret.encode('utf-8'), password)
+    totp_secret_encrypted = rsa_aes_encrypt(totp_secret.encode('utf-8'), password + TOKEN_PEPPER)
     
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -210,7 +213,7 @@ def get_user_private_key(user_id):
 
 def create_note(title, content, user_id, password):
     encrypted_private_key = get_user_private_key(user_id)
-    private_key = RSA.import_key(rsa_aes_decrypt(encrypted_private_key, password))
+    private_key = RSA.import_key(rsa_aes_decrypt(encrypted_private_key, password + KEY_PEPPER))
     sign = create_sign(content, private_key)
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -244,7 +247,7 @@ def get_user_note_by_id(note_id, user_id):
 
 def update_note(note_id, title, content, user_id, password):
     encrypted_private_key = get_user_private_key(user_id)
-    private_key = RSA.import_key(rsa_aes_decrypt(encrypted_private_key, password))
+    private_key = RSA.import_key(rsa_aes_decrypt(encrypted_private_key, password + KEY_PEPPER))
     sign = create_sign(content, private_key)
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()

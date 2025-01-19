@@ -331,6 +331,7 @@ def forgot_password():
             sleep_to_meet_min_time(min_time, time.time() - start_time)
             return render_template('forgot_password.html', message="Please check your email.")
         
+        #pytanie czy trzeba sprawdzać cała baze czy nie, długo zajmuje haszowanie
         token = None
         while not token:
             potential_token = secrets.token_urlsafe(32)

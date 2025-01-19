@@ -4,12 +4,6 @@ WORKDIR /app
 
 COPY . /app
 
-USER root
-
-RUN pip install --no-cache-dir -r requirements.txt && pip install uwsgi
-
-RUN chown -R www-data:www-data /app/data
-
-USER www-data
+RUN pip install --no-cache-dir -r requirements.txt && pip install uwsgi 
 
 CMD ["uwsgi", "--ini", "uwsgi.ini"]
